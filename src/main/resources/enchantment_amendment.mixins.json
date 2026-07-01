@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.platypushasnohat.enchantment_amendment.mixins",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "enchantment_amendment.refmap.json",
+  "mixins": [],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8"
+}
