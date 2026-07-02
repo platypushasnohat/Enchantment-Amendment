@@ -3,7 +3,14 @@
   "package": "com.platypushasnohat.enchantment_amendment.mixins",
   "compatibilityLevel": "JAVA_21",
   "refmap": "enchantment_amendment.refmap.json",
-  "mixins": [],
+  "mixins": [
+    "AnvilMenuMixin",
+    "EnchantmentHelperMixin",
+    "ItemStackMixin",
+    "PlayerMixin",
+    "ThrownExperienceBottleMixin",
+    "TridentItemMixin"
+  ],
   "client": [],
   "injectors": {
     "defaultRequire": 1

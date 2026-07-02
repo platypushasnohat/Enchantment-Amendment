@@ -109,6 +109,10 @@ dependencies {
     compileOnly "mezz.jei:jei-$minecraft_version-neoforge-api:$jei_version"
     localRuntime "mezz.jei:jei-$minecraft_version-neoforge:$jei_version"
     localRuntime "maven.modrinth:worldedit:7.3.6"
+    // blueprint
+    localRuntime "maven.modrinth:VsM5EDoI:5JOCYuQM"
+    // allurement
+    localRuntime "maven.modrinth:eIO12l2t:LPWZjZvj"
 }
 
 tasks.withType(ProcessResources).configureEach {
