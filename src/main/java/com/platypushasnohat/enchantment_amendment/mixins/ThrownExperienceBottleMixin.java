@@ -10,6 +10,6 @@ public class ThrownExperienceBottleMixin {
 
     @ModifyVariable(method = "onHit", at = @At(value = "STORE"), ordinal = 0)
     private int enchantmentAmendment$setXpAmountFromBottle(int original) {
-        return 10;
+        return 15;
     }
 }

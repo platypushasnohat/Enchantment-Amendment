@@ -1,5 +1,6 @@
 package com.platypushasnohat.enchantment_amendment.mixins;
 
+import com.platypushasnohat.enchantment_amendment.utils.EnchantmentLimitUtils;
 import net.minecraft.core.Holder;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
@@ -30,13 +31,16 @@ public class EnchantmentHelperMixin {
     @Inject(method = "selectEnchantment(Lnet/minecraft/util/RandomSource;Lnet/minecraft/world/item/ItemStack;ILjava/util/stream/Stream;)Ljava/util/List;", at = @At("RETURN"), cancellable = true)
     private static void enchantmentAmendment$limitEnchantmentSelect(RandomSource random, ItemStack stack, int level, Stream<Holder<Enchantment>> possibleEnchantments, CallbackInfoReturnable<List<EnchantmentInstance>> cir) {
         List<EnchantmentInstance> selectedEnchantments = cir.getReturnValue();
-        int limitCount = 3;
+        int limitCount = EnchantmentLimitUtils.getLimitCount(stack);
         if (!selectedEnchantments.isEmpty() && selectedEnchantments.size() > limitCount) {
-            ArrayList<EnchantmentInstance> shuffled = new ArrayList<>(selectedEnchantments);
-            Collections.shuffle(shuffled);
-            int limit = Math.min(limitCount, shuffled.size());
-            ArrayList<EnchantmentInstance> selected = new ArrayList<>(shuffled.subList(0, limit));
-            cir.setReturnValue(selected);
+            ArrayList<EnchantmentInstance> result = new ArrayList<>();
+            result.add(selectedEnchantments.getFirst());
+            ArrayList<EnchantmentInstance> remaining = new ArrayList<>(selectedEnchantments.subList(1, selectedEnchantments.size()));
+            Collections.shuffle(remaining);
+            while (result.size() < limitCount && !remaining.isEmpty()) {
+                result.add(remaining.removeFirst());
+            }
+            cir.setReturnValue(result);
         }
     }
 }

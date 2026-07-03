@@ -10,8 +10,8 @@
           "type": "minecraft:remove_binomial",
           "chance": {
             "type": "minecraft:linear",
-            "base": 0.2,
-            "per_level_above_first": 0.2
+            "base": 0.15,
+            "per_level_above_first": 0.15
           }
         },
         "requirements": {
@@ -28,7 +28,7 @@
     "base": 18,
     "per_level_above_first": 10
   },
-  "max_level": 3,
+  "max_level": 5,
   "min_cost": {
     "base": 2,
     "per_level_above_first": 10
