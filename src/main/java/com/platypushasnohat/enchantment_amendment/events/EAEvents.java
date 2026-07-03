@@ -1,7 +1,6 @@
 package com.platypushasnohat.enchantment_amendment.events;
 
 import com.platypushasnohat.enchantment_amendment.EnchantmentAmendment;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -14,10 +13,8 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
 
 @EventBusSubscriber(modid = EnchantmentAmendment.MOD_ID)
 public class EAEvents {
@@ -37,11 +34,7 @@ public class EAEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void modifyItemComponents(ModifyDefaultComponentsEvent event) {
-        event.modify(Items.ENCHANTED_BOOK, builder -> builder.set(DataComponents.MAX_STACK_SIZE, 64));
-    }
-
+    // use empty bottles to gather your own xp
     @SubscribeEvent
     public static void onClickBottle(PlayerInteractEvent.RightClickItem event) {
         Player player = event.getEntity();
@@ -73,10 +66,5 @@ public class EAEvents {
                 player.drop(xpBottle, false);
             }
         }
-    }
-
-    @SubscribeEvent
-    public static void onPickupXp(PlayerXpEvent.XpChange event) {
-        event.getEntity().takeXpDelay = 0;
     }
 }

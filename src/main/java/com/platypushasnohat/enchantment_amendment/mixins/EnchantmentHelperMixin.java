@@ -13,7 +13,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
@@ -21,12 +20,12 @@ import java.util.stream.Stream;
 @Mixin(EnchantmentHelper.class)
 public class EnchantmentHelperMixin {
 
-    @Inject(method = "isEnchantmentCompatible", at = @At("HEAD"), cancellable = true)
-    private static void enchantmentAmendment$checkEnchantmentsAboveLimit(Collection<Holder<Enchantment>> currentEnchantments, Holder<Enchantment> newEnchantment, CallbackInfoReturnable<Boolean> cir) {
-        if (currentEnchantments.size() >= 3 && !currentEnchantments.contains(newEnchantment)) {
-            cir.setReturnValue(false);
-        }
-    }
+//    @Inject(method = "isEnchantmentCompatible", at = @At("HEAD"), cancellable = true)
+//    private static void enchantmentAmendment$checkEnchantmentsAboveLimit(Collection<Holder<Enchantment>> currentEnchantments, Holder<Enchantment> newEnchantment, CallbackInfoReturnable<Boolean> cir) {
+//        if (currentEnchantments.size() >= 3 && !currentEnchantments.contains(newEnchantment)) {
+//            cir.setReturnValue(false);
+//        }
+//    }
 
     @Inject(method = "selectEnchantment(Lnet/minecraft/util/RandomSource;Lnet/minecraft/world/item/ItemStack;ILjava/util/stream/Stream;)Ljava/util/List;", at = @At("RETURN"), cancellable = true)
     private static void enchantmentAmendment$limitEnchantmentSelect(RandomSource random, ItemStack stack, int level, Stream<Holder<Enchantment>> possibleEnchantments, CallbackInfoReturnable<List<EnchantmentInstance>> cir) {

@@ -6,12 +6,16 @@
   "mixins": [
     "AnvilMenuMixin",
     "EnchantmentHelperMixin",
+    "ExperienceOrbMixin",
+    "IItemStackExtensionMixin",
     "ItemStackMixin",
     "PlayerMixin",
     "ThrownExperienceBottleMixin",
     "TridentItemMixin"
   ],
-  "client": [],
+  "client": [
+    "client.AnvilScreenMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   },

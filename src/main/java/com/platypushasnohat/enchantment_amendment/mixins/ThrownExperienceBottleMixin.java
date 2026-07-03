@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(ThrownExperienceBottle.class)
 public class ThrownExperienceBottleMixin {
 
+    // always give half an xp level
     @ModifyVariable(method = "onHit", at = @At(value = "STORE"), ordinal = 0)
     private int enchantmentAmendment$setXpAmountFromBottle(int original) {
         return 15;
