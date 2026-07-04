@@ -29,7 +29,7 @@ public class EnchantmentAmendment {
 
     public void addPackFinders(AddPackFindersEvent event) {
         if (event.getPackType() == PackType.SERVER_DATA) {
-            event.addPackFinders(modPrefix("datapacks/enchantment_amendment"), PackType.SERVER_DATA, Component.literal("Enchantment Amendments"), PackSource.BUILT_IN, true, Pack.Position.TOP);
+            event.addPackFinders(modPrefix("datapacks/enchantment_amendment"), PackType.SERVER_DATA, Component.literal("Enchantment Amendments"), PackSource.BUILT_IN, EnchantmentAmendmentConfig.ENCHANTMENT_TWEAKS.getAsBoolean(), Pack.Position.TOP);
         }
     }
 }
