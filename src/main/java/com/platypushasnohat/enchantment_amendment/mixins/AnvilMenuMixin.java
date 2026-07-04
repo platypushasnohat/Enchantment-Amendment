@@ -79,7 +79,8 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
                     int enchantSum = EnchantmentHelper.getEnchantmentsForCrafting(inputItem).entrySet().stream().mapToInt(entry -> entry.getKey().value().getAnvilCost() * entry.getIntValue()).sum();
                     int repairCost = 1 + Mth.ceil((float) enchantSum / 4);
                     cost += repairCost;
-                } else {
+                }
+                else {
                     if (!hasStoredEnchantments && (!inputItem.is(addItem.getItem()) || !inputItem.isDamageableItem())) {
                         this.resultSlots.setItem(0, ItemStack.EMPTY);
                         this.cost.set(0);
@@ -129,7 +130,8 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
 
                         if (!supportsEnchantment) {
                             flag3 = true;
-                        } else {
+                        }
+                        else {
                             flag2 = true;
                             if (!mutableEnchantments.keySet().contains(enchantmentHolder) && mutableEnchantments.keySet().size() >= limit) {
                                 continue;
@@ -162,7 +164,8 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
                 if (!itemName.equals(itemStack.getHoverName().getString())) {
                     inputItem.set(DataComponents.CUSTOM_NAME, Component.literal(itemName));
                 }
-            } else if (itemStack.has(DataComponents.CUSTOM_NAME)) {
+            }
+            else if (itemStack.has(DataComponents.CUSTOM_NAME)) {
                 inputItem.remove(DataComponents.CUSTOM_NAME);
             }
 
