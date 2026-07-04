@@ -1,5 +1,6 @@
 package com.platypushasnohat.enchantment_amendment.mixins;
 
+import com.platypushasnohat.enchantment_amendment.EnchantmentAmendmentConfig;
 import com.platypushasnohat.enchantment_amendment.utils.EnchantmentLimitUtils;
 import net.minecraft.core.Holder;
 import net.minecraft.world.item.ItemStack;
@@ -18,11 +19,13 @@ public interface IItemStackExtensionMixin {
     @SuppressWarnings("DataFlowIssue")
     @Inject(method = "supportsEnchantment", at = @At("HEAD"), cancellable = true)
     private void enchantmentAmendment$supportsEnchantment(Holder<Enchantment> enchantment, CallbackInfoReturnable<Boolean> cir) {
-        ItemStack stack = (ItemStack) (Object) this;
-        ItemEnchantments enchantments = EnchantmentHelper.getEnchantmentsForCrafting(stack);
-        int limit = EnchantmentLimitUtils.getLimitCount(stack);
-        if (!enchantments.keySet().contains(enchantment) && enchantments.keySet().size() >= limit) {
-            cir.setReturnValue(false);
+        if (EnchantmentAmendmentConfig.LIMITED_ENCHANTMENTS.getAsBoolean()) {
+            ItemStack stack = (ItemStack) (Object) this;
+            ItemEnchantments enchantments = EnchantmentHelper.getEnchantmentsForCrafting(stack);
+            int limit = EnchantmentLimitUtils.getLimitCount(stack);
+            if (!enchantments.keySet().contains(enchantment) && enchantments.keySet().size() >= limit) {
+                cir.setReturnValue(false);
+            }
         }
     }
 }

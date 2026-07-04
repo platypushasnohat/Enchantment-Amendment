@@ -8,6 +8,7 @@ import net.minecraft.server.packs.repository.PackSource;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 
 import java.util.Locale;
@@ -18,6 +19,7 @@ public class EnchantmentAmendment {
     public static final String MOD_ID = "enchantment_amendment";
 
     public EnchantmentAmendment(IEventBus modEventBus, ModContainer modContainer) {
+        modContainer.registerConfig(ModConfig.Type.COMMON, EnchantmentAmendmentConfig.COMMON_CONFIG, "enchantment-amendment-general.toml");
         modEventBus.addListener(this::addPackFinders);
     }
 

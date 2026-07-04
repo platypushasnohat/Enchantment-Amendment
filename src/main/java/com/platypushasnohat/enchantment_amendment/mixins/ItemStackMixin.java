@@ -2,6 +2,7 @@ package com.platypushasnohat.enchantment_amendment.mixins;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.platypushasnohat.enchantment_amendment.EnchantmentAmendmentConfig;
 import com.platypushasnohat.enchantment_amendment.utils.EnchantmentLimitUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -39,16 +40,18 @@ public class ItemStackMixin {
     // add enchantment slots unless its a book
     @WrapOperation(method = "getTooltipLines(Lnet/minecraft/world/item/Item$TooltipContext;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/item/TooltipFlag;)Ljava/util/List;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;addToTooltip(Lnet/minecraft/core/component/DataComponentType;Lnet/minecraft/world/item/Item$TooltipContext;Ljava/util/function/Consumer;Lnet/minecraft/world/item/TooltipFlag;)V"))
     private void enchantmentAmendment$enchantmentLimitTooltip(ItemStack stack, DataComponentType<?> componentType, Item.TooltipContext context, Consumer<Component> componentConsumer, TooltipFlag tooltipFlag, Operation<Void> original) {
-        if (componentType == DataComponents.ENCHANTMENTS) {
-            ItemEnchantments existingEnchantments = stack.getTagEnchantments();
-            int enchantmentCount = existingEnchantments.keySet().size();
-            if (!(stack.getItem() instanceof EnchantedBookItem) && enchantmentCount > 0) {
-                int maxEnchantments = EnchantmentLimitUtils.getLimitCount(stack);
-                StringBuilder slots = new StringBuilder();
-                for (int i = 0; i < maxEnchantments; i++) {
-                    slots.append(i < enchantmentCount ? '◆' : '◇');
+        if (EnchantmentAmendmentConfig.LIMITED_ENCHANTMENTS.getAsBoolean()) {
+            if (componentType == DataComponents.ENCHANTMENTS) {
+                ItemEnchantments existingEnchantments = stack.getTagEnchantments();
+                int enchantmentCount = existingEnchantments.keySet().size();
+                if (!(stack.getItem() instanceof EnchantedBookItem) && enchantmentCount > 0) {
+                    int maxEnchantments = EnchantmentLimitUtils.getLimitCount(stack);
+                    StringBuilder slots = new StringBuilder();
+                    for (int i = 0; i < maxEnchantments; i++) {
+                        slots.append(i < enchantmentCount ? '◆' : '◇');
+                    }
+                    componentConsumer.accept(Component.literal(slots.toString()).withStyle(ChatFormatting.BLUE));
                 }
-                componentConsumer.accept(Component.literal(slots.toString()).withStyle(ChatFormatting.BLUE));
             }
         }
         original.call(stack, componentType, context, componentConsumer, tooltipFlag);

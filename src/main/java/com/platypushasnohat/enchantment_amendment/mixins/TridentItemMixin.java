@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.platypushasnohat.enchantment_amendment.EnchantmentAmendmentConfig;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -22,17 +23,23 @@ import org.spongepowered.asm.mixin.injection.At;
 public class TridentItemMixin {
 
     @ModifyExpressionValue(method = "releaseUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/enchantment/EnchantmentHelper;getTridentSpinAttackStrength(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/entity/LivingEntity;)F"))
-    private float enchantmentAmendment$tridentSpinAttackRelease(float original, ItemStack stack, net.minecraft.world.level.Level level, LivingEntity entity, int timeLeft) {
-        if (original > 0.0F && entity instanceof Player player && !this.enchantmentAmendment$canPlayerRiptide(player)) {
-            return 0.0F;
+    private float enchantmentAmendment$tridentSpinAttackRelease(float original, ItemStack stack, Level level, LivingEntity entity, int timeLeft) {
+        if (EnchantmentAmendmentConfig.FLEXIBLE_TRIDENTS.getAsBoolean()) {
+            if (original > 0.0F && entity instanceof Player player && !this.enchantmentAmendment$canPlayerRiptide(player)) {
+                return 0.0F;
+            }
+            return original;
         }
         return original;
     }
 
     @ModifyExpressionValue(method = "use", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/enchantment/EnchantmentHelper;getTridentSpinAttackStrength(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/entity/LivingEntity;)F"))
     private float enchantmentAmendment$tridentSpinAttackUse(float original, Level level, Player player, InteractionHand hand) {
-        if (original > 0.0F && !this.enchantmentAmendment$canPlayerRiptide(player)) {
-            return 0.0F;
+        if (EnchantmentAmendmentConfig.FLEXIBLE_TRIDENTS.getAsBoolean()) {
+            if (original > 0.0F && !this.enchantmentAmendment$canPlayerRiptide(player)) {
+                return 0.0F;
+            }
+            return original;
         }
         return original;
     }
@@ -40,15 +47,20 @@ public class TridentItemMixin {
     // make riptide sound respect the new riptide conditions
     @WrapOperation(method = "releaseUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;playSound(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FF)V", ordinal = 0))
     private void enchantmentAmendment$tridentThrowSound(Level level, Player sourcePlayer, Entity entity, SoundEvent sound, SoundSource source, float volume, float pitch, Operation<Void> original, @Local(argsOnly = true) LivingEntity entityLiving) {
-        if (entityLiving instanceof Player player && !this.enchantmentAmendment$canPlayerRiptide(player)) {
-            sound = SoundEvents.TRIDENT_THROW.value();
+        if (EnchantmentAmendmentConfig.FLEXIBLE_TRIDENTS.getAsBoolean()) {
+            if (entityLiving instanceof Player player && !this.enchantmentAmendment$canPlayerRiptide(player)) {
+                sound = SoundEvents.TRIDENT_THROW.value();
+            }
+            original.call(level, sourcePlayer, entity, sound, source, volume, pitch);
         }
-        original.call(level, sourcePlayer, entity, sound, source, volume, pitch);
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     @Unique
     private boolean enchantmentAmendment$canPlayerRiptide(Player player) {
-        return !player.isShiftKeyDown() && (player.isInWater() || (player.isInRain() && player.onGround()));
+        if (EnchantmentAmendmentConfig.RIPTIDE_CONDITIONS.getAsBoolean()) {
+            return !player.isShiftKeyDown() && (player.isInWater() || (player.isInRain() && player.onGround()));
+        }
+        return player.isInWater() || player.isInRain();
     }
 }

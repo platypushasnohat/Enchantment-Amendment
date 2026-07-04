@@ -1,6 +1,7 @@
 package com.platypushasnohat.enchantment_amendment.events;
 
 import com.platypushasnohat.enchantment_amendment.EnchantmentAmendment;
+import com.platypushasnohat.enchantment_amendment.EnchantmentAmendmentConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -31,20 +32,21 @@ public class EAEvents {
 
     @SubscribeEvent
     public static void modifyItemComponents(ModifyDefaultComponentsEvent event) {
-        event.modify(Items.ENCHANTED_BOOK, builder -> builder.set(DataComponents.MAX_STACK_SIZE, 64));
+        if (EnchantmentAmendmentConfig.STACKABLE_ENCHANTED_BOOKS.getAsBoolean()) {
+            event.modify(Items.ENCHANTED_BOOK, builder -> builder.set(DataComponents.MAX_STACK_SIZE, 64));
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void handleBreakSpeedEvent(PlayerEvent.BreakSpeed event) {
-        if (event.isCanceled()) {
-            return;
-        }
-        Player player = event.getEntity();
-        var enchantments = player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
-        var aquaAffinity = enchantments.get(Enchantments.AQUA_AFFINITY);
-        if (aquaAffinity.isPresent() && EnchantmentHelper.getEnchantmentLevel(aquaAffinity.get(), player) > 0) {
-            if (!player.onGround() && player.isInWaterOrBubble()) {
-                event.setNewSpeed(event.getNewSpeed() * 5.0F);
+        if (EnchantmentAmendmentConfig.AQUA_AFFINITY_REMOVES_PENALTY.getAsBoolean() && !event.isCanceled()) {
+            Player player = event.getEntity();
+            var enchantments = player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+            var aquaAffinity = enchantments.get(Enchantments.AQUA_AFFINITY);
+            if (aquaAffinity.isPresent() && EnchantmentHelper.getEnchantmentLevel(aquaAffinity.get(), player) > 0) {
+                if (!player.onGround() && player.isInWaterOrBubble()) {
+                    event.setNewSpeed(event.getNewSpeed() * 5.0F);
+                }
             }
         }
     }
@@ -56,37 +58,39 @@ public class EAEvents {
         ItemStack stack = player.getItemInHand(event.getHand());
         Level level = event.getLevel();
 
-        if (!level.isClientSide && stack.is(Items.GLASS_BOTTLE)) {
-            int available = player.totalExperience / 15;
-            int used = player.isShiftKeyDown() ? Math.min(stack.getCount(), available) : Math.min(1, available);
+        if (EnchantmentAmendmentConfig.BOTTLE_XP.getAsBoolean()) {
+            if (!level.isClientSide && stack.is(Items.GLASS_BOTTLE)) {
+                int available = player.totalExperience / 15;
+                int used = player.isShiftKeyDown() ? Math.min(stack.getCount(), available) : Math.min(1, available);
 
-            if (used <= 0) {
-                return;
-            }
+                if (used <= 0) {
+                    return;
+                }
 
-            int xpAmount = used * 15;
+                int xpAmount = used * 15;
 
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.SUCCESS);
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
 
-            if (!player.isCreative()) {
-                stack.shrink(used);
-            }
+                if (!player.isCreative()) {
+                    stack.shrink(used);
+                }
 
-            player.giveExperiencePoints(-xpAmount);
-            level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.15F, 0.9F + player.level().getRandom().nextFloat() * 0.15F);
+                player.giveExperiencePoints(-xpAmount);
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.15F, 0.9F + player.level().getRandom().nextFloat() * 0.15F);
 
-            ItemStack xpBottle = new ItemStack(Items.EXPERIENCE_BOTTLE, used);
+                ItemStack xpBottle = new ItemStack(Items.EXPERIENCE_BOTTLE, used);
 
-            if (!player.getInventory().add(xpBottle)) {
-                player.drop(xpBottle, false);
+                if (!player.getInventory().add(xpBottle)) {
+                    player.drop(xpBottle, false);
+                }
             }
         }
     }
 
     @SubscribeEvent
     public static void setAnvilBreakChance(AnvilRepairEvent event) {
-        event.setBreakChance(0.08F);
+        event.setBreakChance((float) EnchantmentAmendmentConfig.ANVIL_USE_BREAK_CHANCE.getAsDouble());
     }
 
     @SubscribeEvent
@@ -98,26 +102,26 @@ public class EAEvents {
         BlockState state = level.getBlockState(pos);
         Block block = state.getBlock();
 
-        if (state.is(Blocks.CHIPPED_ANVIL) || state.is(Blocks.DAMAGED_ANVIL) && !level.isClientSide && stack.is(Tags.Items.STORAGE_BLOCKS_IRON)) {
-            BlockState repaired;
-            if (block.equals(Blocks.CHIPPED_ANVIL)) {
-                repaired = Blocks.ANVIL.defaultBlockState();
-                level.setBlock(pos, repaired.setValue(AnvilBlock.FACING, state.getValue(AnvilBlock.FACING)), 3);
-            }
-            else if (block.equals(Blocks.DAMAGED_ANVIL)) {
-                repaired = Blocks.CHIPPED_ANVIL.defaultBlockState();
-                level.setBlock(pos, repaired.setValue(AnvilBlock.FACING, state.getValue(AnvilBlock.FACING)), 3);
-            }
-            else {
-                event.setCancellationResult(InteractionResult.PASS);
-            }
+        if (EnchantmentAmendmentConfig.REPAIRABLE_ANVILS.getAsBoolean()) {
+            if (state.is(Blocks.CHIPPED_ANVIL) || state.is(Blocks.DAMAGED_ANVIL) && !level.isClientSide && stack.is(Tags.Items.STORAGE_BLOCKS_IRON)) {
+                BlockState repaired;
+                if (block.equals(Blocks.CHIPPED_ANVIL)) {
+                    repaired = Blocks.ANVIL.defaultBlockState();
+                    level.setBlock(pos, repaired.setValue(AnvilBlock.FACING, state.getValue(AnvilBlock.FACING)), 3);
+                } else if (block.equals(Blocks.DAMAGED_ANVIL)) {
+                    repaired = Blocks.CHIPPED_ANVIL.defaultBlockState();
+                    level.setBlock(pos, repaired.setValue(AnvilBlock.FACING, state.getValue(AnvilBlock.FACING)), 3);
+                } else {
+                    event.setCancellationResult(InteractionResult.PASS);
+                }
 
-            if (!player.isCreative()) {
-                stack.shrink(1);
+                if (!player.isCreative()) {
+                    stack.shrink(1);
+                }
+                level.playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 0.5F, 1.0F);
+                event.setCancellationResult(InteractionResult.SUCCESS);
+                event.setCanceled(true);
             }
-            level.playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 0.5F, 1.0F);
-            event.setCancellationResult(InteractionResult.SUCCESS);
-            event.setCanceled(true);
         }
     }
 }
