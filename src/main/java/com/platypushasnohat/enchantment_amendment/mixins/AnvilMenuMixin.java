@@ -142,9 +142,10 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
                             // cost is equal to the enchantment level * enchantment anvil cost
                             cost += enchantment.getAnvilCost() * enchantmentValue;
                             if (itemStack.getCount() > 1) {
+                                cost = -1;
                                 // consume multiple books if enchanting multiple items at once
-                                this.repairItemCountCost = itemStack.getCount();
-                                cost *= itemStack.getCount();
+                                // this.repairItemCountCost = itemStack.getCount();
+                                // cost *= itemStack.getCount();
                             }
                         }
                     }
