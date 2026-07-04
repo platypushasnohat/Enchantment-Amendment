@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 @Mixin(ItemStack.class)
 public class ItemStackMixin {
 
+    // probably not needed, but leaving it here anyway
     @Inject(method = "enchant", at = @At("HEAD"), cancellable = true)
     private void enchantmentAmendment$limitEnchantments(Holder<Enchantment> enchantment, int level, CallbackInfo ci) {
         ItemStack stack = (ItemStack) (Object) this;

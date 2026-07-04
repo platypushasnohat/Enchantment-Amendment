@@ -1,6 +1,7 @@
 package com.platypushasnohat.enchantment_amendment.events;
 
 import com.platypushasnohat.enchantment_amendment.EnchantmentAmendment;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -13,11 +14,17 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 @EventBusSubscriber(modid = EnchantmentAmendment.MOD_ID)
 public class EAEvents {
+
+    @SubscribeEvent
+    public static void modifyItemComponents(ModifyDefaultComponentsEvent event) {
+        event.modify(Items.ENCHANTED_BOOK, builder -> builder.set(DataComponents.MAX_STACK_SIZE, 64));
+    }
 
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void handleBreakSpeedEvent(PlayerEvent.BreakSpeed event) {

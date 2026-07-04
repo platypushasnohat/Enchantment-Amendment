@@ -37,6 +37,7 @@ public class TridentItemMixin {
         return original;
     }
 
+    // make riptide sound respect the new riptide conditions
     @WrapOperation(method = "releaseUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;playSound(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FF)V", ordinal = 0))
     private void enchantmentAmendment$tridentThrowSound(Level level, Player sourcePlayer, Entity entity, SoundEvent sound, SoundSource source, float volume, float pitch, Operation<Void> original, @Local(argsOnly = true) LivingEntity entityLiving) {
         if (entityLiving instanceof Player player && !this.enchantmentAmendment$canPlayerRiptide(player)) {

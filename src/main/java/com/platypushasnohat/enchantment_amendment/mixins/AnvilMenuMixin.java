@@ -1,6 +1,7 @@
 package com.platypushasnohat.enchantment_amendment.mixins;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.platypushasnohat.enchantment_amendment.utils.EnchantmentLimitUtils;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -18,7 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.*;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = AnvilMenu.class, priority = 100)
@@ -58,10 +60,11 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
             ItemStack inputItem = itemStack.copy();
             ItemStack addItem = inputSlots.getItem(1);
             ItemEnchantments.Mutable mutableEnchantments = new ItemEnchantments.Mutable(EnchantmentHelper.getEnchantmentsForCrafting(inputItem));
-            this.repairItemCountCost = 0;
-            boolean flag = false;
+            // always one to ensure only one item is consumed since enchanted books stack now
+            this.repairItemCountCost = 1;
+            boolean hasStoredEnchantments = false;
             if (!addItem.isEmpty()) {
-                flag = addItem.has(DataComponents.STORED_ENCHANTMENTS);
+                hasStoredEnchantments = addItem.has(DataComponents.STORED_ENCHANTMENTS);
                 if (inputItem.isDamageableItem() && inputItem.getItem().isValidRepairItem(itemStack, addItem)) {
                     int l2 = Math.min(inputItem.getDamageValue(), inputItem.getMaxDamage() / 4);
                     if (l2 <= 0) {
@@ -76,27 +79,26 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
                     int enchantSum = EnchantmentHelper.getEnchantmentsForCrafting(inputItem).entrySet().stream().mapToInt(entry -> entry.getKey().value().getAnvilCost() * entry.getIntValue()).sum();
                     int repairCost = 1 + Mth.ceil((float) enchantSum / 4);
                     cost += repairCost;
-                    this.repairItemCountCost = 1;
                 } else {
-                    if (!flag && (!inputItem.is(addItem.getItem()) || !inputItem.isDamageableItem())) {
+                    if (!hasStoredEnchantments && (!inputItem.is(addItem.getItem()) || !inputItem.isDamageableItem())) {
                         this.resultSlots.setItem(0, ItemStack.EMPTY);
                         this.cost.set(0);
                         return;
                     }
 
                     // combine items
-                    if (inputItem.isDamageableItem() && !flag) {
-                        int l = itemStack.getMaxDamage() - itemStack.getDamageValue();
-                        int i1 = addItem.getMaxDamage() - addItem.getDamageValue();
-                        int j1 = i1 + inputItem.getMaxDamage() * 12 / 100;
-                        int k1 = l + j1;
-                        int l1 = inputItem.getMaxDamage() - k1;
-                        if (l1 < 0) {
-                            l1 = 0;
+                    if (inputItem.isDamageableItem() && !hasStoredEnchantments) {
+                        int inputItemDamage = itemStack.getMaxDamage() - itemStack.getDamageValue();
+                        int addItemDamage = addItem.getMaxDamage() - addItem.getDamageValue();
+                        int j1 = addItemDamage + inputItem.getMaxDamage() * 12 / 100;
+                        int k1 = inputItemDamage + j1;
+                        int damage = inputItem.getMaxDamage() - k1;
+                        if (damage < 0) {
+                            damage = 0;
                         }
-                        if (l1 < inputItem.getDamageValue()) {
-                            inputItem.setDamageValue(l1);
-                            cost += 2;
+                        if (damage < inputItem.getDamageValue()) {
+                            inputItem.setDamageValue(damage);
+                            cost += 1;
                         }
                     }
 
@@ -104,43 +106,45 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
                     boolean flag2 = false;
                     boolean flag3 = false;
 
-                    for (Object2IntMap.Entry<Holder<Enchantment>> entry : itemEnchantments.entrySet()) {
-                        Holder<Enchantment> holder = entry.getKey();
-                        int i2 = mutableEnchantments.getLevel(holder);
-                        int j2 = entry.getIntValue();
-                        j2 = i2 == j2 ? j2 + 1 : Math.max(j2, i2);
-                        Enchantment enchantment = holder.value();
-                        // Neo: Respect IItemExtension#supportsEnchantment - we also delegate the logic for Enchanted Books to this method.
-                        // Though we still allow creative players to combine any item with any enchantment in the anvil here.
-                        boolean flag1 = itemStack.supportsEnchantment(holder);
-                        if (this.player.getAbilities().instabuild) {
-                            flag1 = true;
+                    int limit = EnchantmentLimitUtils.getLimitCount(inputItem);
+                    for (Object2IntMap.Entry<Holder<Enchantment>> enchantmentEntries : itemEnchantments.entrySet()) {
+
+                        Holder<Enchantment> enchantmentHolder = enchantmentEntries.getKey();
+                        int enchantmentLevel = mutableEnchantments.getLevel(enchantmentHolder);
+                        int enchantmentValue = enchantmentEntries.getIntValue();
+                        enchantmentValue = enchantmentLevel == enchantmentValue ? enchantmentValue + 1 : Math.max(enchantmentValue, enchantmentLevel);
+                        Enchantment enchantment = enchantmentHolder.value();
+
+                        boolean supportsEnchantment = itemStack.supportsEnchantment(enchantmentHolder);
+                        if (player.getAbilities().instabuild) {
+                            supportsEnchantment = true;
                         }
 
                         for (Holder<Enchantment> holder1 : mutableEnchantments.keySet()) {
-                            if (!holder1.equals(holder) && !Enchantment.areCompatible(holder, holder1)) {
-                                flag1 = false;
+                            if (!holder1.equals(enchantmentHolder) && !Enchantment.areCompatible(enchantmentHolder, holder1)) {
+                                supportsEnchantment = false;
                                 cost++;
                             }
                         }
 
-                        if (!flag1) {
+                        if (!supportsEnchantment) {
                             flag3 = true;
                         } else {
                             flag2 = true;
-                            if (j2 > enchantment.getMaxLevel()) {
-                                j2 = enchantment.getMaxLevel();
+                            if (!mutableEnchantments.keySet().contains(enchantmentHolder) && mutableEnchantments.keySet().size() >= limit) {
+                                continue;
+                            }
+                            if (enchantmentValue > enchantment.getMaxLevel()) {
+                                enchantmentValue = enchantment.getMaxLevel();
                             }
 
-                            mutableEnchantments.set(holder, j2);
-                            int l3 = enchantment.getAnvilCost();
-                            if (flag) {
-                                l3 = Math.max(1, l3 / 2);
-                            }
-
-                            cost += l3 * j2;
+                            mutableEnchantments.set(enchantmentHolder, enchantmentValue);
+                            // cost is equal to the enchantment level * enchantment anvil cost
+                            cost += enchantment.getAnvilCost() * enchantmentValue;
                             if (itemStack.getCount() > 1) {
-                                cost = 40;
+                                // consume multiple books if enchanting multiple items at once
+                                this.repairItemCountCost = itemStack.getCount();
+                                cost *= itemStack.getCount();
                             }
                         }
                     }
@@ -161,11 +165,16 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
                 inputItem.remove(DataComponents.CUSTOM_NAME);
             }
 
-            if (flag && !inputItem.isBookEnchantable(addItem)) inputItem = ItemStack.EMPTY;
+            if (hasStoredEnchantments && !inputItem.isBookEnchantable(addItem)) {
+                inputItem = ItemStack.EMPTY;
+            }
 
-            int k2 = (int) Mth.clamp(cost, 0L, 2147483647L);
-            this.cost.set(k2);
-            if (cost <= 0) {
+            int clamped = (int) Mth.clamp(cost, 0L, 2147483647L);
+            this.cost.set(clamped);
+
+            boolean hasRename = itemName != null && !StringUtil.isBlank(itemName) && !itemName.equals(itemStack.getHoverName().getString());
+            boolean hasOtherChanges = cost > 0;
+            if (!hasRename && !hasOtherChanges) {
                 inputItem = ItemStack.EMPTY;
             }
 
@@ -181,81 +190,6 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
             this.resultSlots.setItem(0, ItemStack.EMPTY);
             this.cost.set(0);
         }
-
-        // new
-//        ItemStack input = inputSlots.getItem(0);
-//
-//        this.cost.set(1);
-//
-//        int cost = 0;
-//        long l = 0L;
-//
-//        if (!input.isEmpty() && !CommonHooks.onAnvilChange(anvilMenu, input, inputSlots.getItem(1), resultSlots, itemName, l, player)) {
-//            ci.cancel();
-//            return;
-//        }
-//
-//        ItemStack result = input.copy();
-//
-//        if (!input.isEmpty() && EnchantmentHelper.canStoreEnchantments(input)) {
-//            ItemEnchantments.Mutable mutableEnchantment = new ItemEnchantments.Mutable(EnchantmentHelper.getEnchantmentsForCrafting(result));
-//            ItemStack right = inputSlots.getItem(1);
-//            boolean rightHasBook = !right.isEmpty() && right.has(DataComponents.STORED_ENCHANTMENTS);
-//            this.repairItemCountCost = 0;
-//
-//            if (!right.isEmpty()) {
-//                if (result.isDamageableItem() && result.getItem().isValidRepairItem(input, right) && !rightHasBook) {
-//                    result.setDamageValue(0);
-//                    int enchantSum = EnchantmentHelper.getEnchantmentsForCrafting(result).entrySet().stream().mapToInt(entry -> entry.getKey().value().getAnvilCost() * entry.getIntValue()).sum();
-//
-//                    // repair cost increases based on (1 + (anvil cost of all enchantments combined / 4)
-//                    int repairCost = 1 + Mth.ceil((float) enchantSum / 4);
-//                    cost += repairCost;
-//                    this.repairItemCountCost = 1;
-//                }
-//                else {
-//                    ItemEnchantments rightEnchants = EnchantmentHelper.getEnchantmentsForCrafting(right);
-//                    for (Object2IntMap.Entry<Holder<Enchantment>> entry : rightEnchants.entrySet()) {
-//                        Holder<Enchantment> holder = entry.getKey();
-//                        Enchantment enchantment = holder.value();
-//                        int finalLevel = mutableEnchantment.getLevel(holder) + entry.getIntValue();
-//                        finalLevel = Math.min(finalLevel, enchantment.getMaxLevel());
-//                        boolean compatible = result.supportsEnchantment(holder) || player.getAbilities().instabuild;
-//                        for (Holder<Enchantment> other : mutableEnchantment.keySet()) {
-//                            if (!other.equals(holder) && !Enchantment.areCompatible(holder, other)) {
-//                                compatible = false;
-//                                cost++;
-//                            }
-//                        }
-//                        if (!compatible) {
-//                            continue;
-//                        }
-//
-//                        mutableEnchantment.set(holder, finalLevel);
-//                        cost += enchantment.getAnvilCost() * finalLevel;
-//                    }
-//                }
-//            }
-//
-//            if (itemName != null && !StringUtil.isBlank(itemName)) {
-//                if (!itemName.equals(input.getHoverName().getString())) {
-//                    result.set(DataComponents.CUSTOM_NAME, Component.literal(itemName));
-//                }
-//            }
-//
-//            EnchantmentHelper.setEnchantments(result, mutableEnchantment.toImmutable());
-//
-//            int total = Mth.clamp(cost, 0, Integer.MAX_VALUE);
-//            this.cost.set(total);
-//            this.resultSlots.setItem(0, result);
-//
-//            this.broadcastChanges();
-//            ci.cancel();
-//        } else {
-//            this.resultSlots.setItem(0, ItemStack.EMPTY);
-//            this.cost.set(0);
-//            ci.cancel();
-//        }
     }
 
     // never increase repair cost (needed for grindstone even though we pretty much override everything else related to this)
