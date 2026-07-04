@@ -112,8 +112,8 @@ public abstract class AnvilMenuMixin extends ItemCombinerMenu {
                         Holder<Enchantment> enchantmentHolder = enchantmentEntries.getKey();
                         int enchantmentLevel = mutableEnchantments.getLevel(enchantmentHolder);
                         int enchantmentValue = enchantmentEntries.getIntValue();
-                        enchantmentValue = enchantmentLevel == enchantmentValue ? enchantmentValue + 1 : Math.max(enchantmentValue, enchantmentLevel);
                         Enchantment enchantment = enchantmentHolder.value();
+                        enchantmentValue = enchantmentLevel + enchantmentValue;
 
                         boolean supportsEnchantment = itemStack.supportsEnchantment(enchantmentHolder);
                         if (player.getAbilities().instabuild) {
